@@ -426,7 +426,7 @@ func replaceHtmlImageWithEmbeddedBase64(outputPath string, logger *zap.Logger) e
 		}
 	}
 	// Rewrite output file with the modified document.
-	err = os.WriteFile(outputPath+".embedded", []byte(html), 0o644)
+	err = os.WriteFile(outputPath+".embedded", []byte(html), 0o600)
 	if err == nil {
 		logger.Info("Wrote the embedded version of the html file")
 		_ = os.Rename(outputPath+".embedded", outputPath)
