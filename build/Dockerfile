@@ -139,13 +139,13 @@ RUN \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN \
-    # Install LibreOffice & unoconverter.
+    # Install LibreOffice & unoconverter (v0.5.0 is the first release without distutils, which Python 3.13 removed).
     apt-get update -qq &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libreoffice &&\
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libreoffice-core)" ge "$LIBREOFFICE_MIN_VERSION" &&\
     # Untrusted documents can load JDBC drivers and run them in a JVM, so the image must not ship one.
     ! command -v java &&\
-    curl -Ls https://raw.githubusercontent.com/gotenberg/unoconverter/v0.0.1/unoconv -o /usr/bin/unoconverter &&\
+    curl -Ls https://raw.githubusercontent.com/gotenberg/unoconverter/v0.5.0/unoconv -o /usr/bin/unoconverter &&\
     chmod +x /usr/bin/unoconverter &&\
     # unoconverter will look for the Python binary, which has to be at version 3.
     ln -s /usr/bin/python3 /usr/bin/python &&\
