@@ -36,6 +36,7 @@ ARG GOTENBERG_USER_GID=1001
 ARG GOTENBERG_USER_UID=1001
 ARG NOTO_COLOR_EMOJI_VERSION=v2.038
 # First trixie build with the fixes for CVE-2026-63260/63266/63267/63268/63269/63277 (DSA-6543-1).
+# Keep in sync with patchedLibreOfficeVersion in pkg/modules/libreoffice/image_test.go.
 ARG LIBREOFFICE_MIN_VERSION="4:25.2.3-2+deb13u8"
 
 LABEL org.opencontainers.image.title="Gotenberg" \
