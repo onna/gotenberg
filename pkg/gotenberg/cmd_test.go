@@ -106,7 +106,7 @@ func TestCmd_Wait(t *testing.T) {
 		{
 			scenario: "wait error",
 			cmd: func() *Cmd {
-				cmd := Command(zap.NewNop(), "echo", "Hello", "World")
+				cmd := Command(zap.NewNop(), "sleep", "10")
 				err := cmd.Start()
 				if err != nil {
 					t.Fatalf("expected no error but got: %v", err)
