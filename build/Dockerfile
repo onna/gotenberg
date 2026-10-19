@@ -29,14 +29,14 @@ RUN go build -o gotenberg -ldflags "-X 'github.com/gotenberg/gotenberg/v8/cmd.Ve
 # ----------------------------------------------
 # Final stage
 # ----------------------------------------------
-FROM debian:12-slim
+FROM debian:13-slim
 
 ARG GOTENBERG_VERSION=8.0.2
 ARG GOTENBERG_USER_GID=1001
 ARG GOTENBERG_USER_UID=1001
 ARG NOTO_COLOR_EMOJI_VERSION=v2.038
-ARG PDFTK_VERSION=v3.3.3
-ARG TMP_CHOMIUM_VERSION_ARMHF="116.0.5845.180-1~deb12u1"
+# First trixie build with the fixes for CVE-2026-63260/63266/63267/63268/63269/63277 (DSA-6543-1).
+ARG LIBREOFFICE_MIN_VERSION="4:25.2.3-2+deb13u8"
 
 LABEL org.opencontainers.image.title="Gotenberg" \
       org.opencontainers.image.description="A Docker-powered stateless API for PDF files." \
@@ -57,7 +57,7 @@ RUN \
     # Install system dependencies required for the next instructions or debugging.
     # Note: tini is a helper for reaping zombie processes.
     apt-get update -qq &&\
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends curl gnupg tini python3 default-jre-headless ca-certificates-java default-jdk &&\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ca-certificates curl gnupg tini python3 &&\
     # Cleanup.
     # Note: the Debian image does automatically a clean after each install thanks to a hook.
     # Therefore, there is no need for apt-get clean.
@@ -120,25 +120,14 @@ RUN \
     # Install either Google Chrome stable on amd64 architecture or
     # Chromium on other architectures.
     # See https://github.com/gotenberg/gotenberg/issues/328.
-    # FIXME:
-    # armhf is currently not working with the latest version of Chromium.
-    # See: https://github.com/gotenberg/gotenberg/issues/709.
     /bin/bash -c \
     'set -e &&\
     if [[ "$(dpkg --print-architecture)" == "amd64" ]]; then \
-      curl https://dl.google.com/linux/linux_signing_key.pub | apt-key add - &&\
-      echo "deb http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list &&\
+      curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg &&\
+      echo "deb [signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list &&\
       apt-get update -qq &&\
-      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends --allow-unauthenticated google-chrome-stable &&\
+      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends google-chrome-stable &&\
       mv /usr/bin/google-chrome-stable /usr/bin/chromium; \
-    elif [[ "$(dpkg --print-architecture)" == "armhf" ]]; then \
-      apt-get update -qq &&\
-      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends devscripts &&\
-      debsnap chromium-common "$TMP_CHOMIUM_VERSION_ARMHF" -v --force --binary --architecture armhf &&\
-      debsnap chromium "$TMP_CHOMIUM_VERSION_ARMHF" -v --force --binary --architecture armhf &&\
-      DEBIAN_FRONTEND=noninteractive apt-get install --fix-broken -y -qq --no-install-recommends "./binary-chromium-common/chromium-common_${TMP_CHOMIUM_VERSION_ARMHF}_armhf.deb" "./binary-chromium/chromium_${TMP_CHOMIUM_VERSION_ARMHF}_armhf.deb" &&\
-      DEBIAN_FRONTEND=noninteractive apt-get purge -y -qq devscripts &&\
-      rm -rf ./binary-chromium-common/* ./binary-chromium/*; \
     else \
       apt-get update -qq &&\
       DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends chromium; \
@@ -150,9 +139,11 @@ RUN \
 
 RUN \
     # Install LibreOffice & unoconverter.
-    echo "deb http://deb.debian.org/debian bookworm-backports main" >> /etc/apt/sources.list &&\
     apt-get update -qq &&\
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -t bookworm-backports libreoffice &&\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libreoffice &&\
+    dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libreoffice-core)" ge "$LIBREOFFICE_MIN_VERSION" &&\
+    # Untrusted documents can load JDBC drivers and run them in a JVM, so the image must not ship one.
+    ! command -v java &&\
     curl -Ls https://raw.githubusercontent.com/gotenberg/unoconverter/v0.0.1/unoconv -o /usr/bin/unoconverter &&\
     chmod +x /usr/bin/unoconverter &&\
     # unoconverter will look for the Python binary, which has to be at version 3.
@@ -164,18 +155,10 @@ RUN \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN \
-    # Install PDFtk & QPDF (PDF engines).
-    # See https://github.com/gotenberg/gotenberg/pull/273.
-    curl -o /usr/bin/pdftk-all.jar "https://gitlab.com/api/v4/projects/5024297/packages/generic/pdftk-java/$PDFTK_VERSION/pdftk-all.jar" &&\
-    chmod a+x /usr/bin/pdftk-all.jar &&\
-    echo '#!/bin/bash\n\nexec java -jar /usr/bin/pdftk-all.jar "$@"' > /usr/bin/pdftk && \
-    chmod +x /usr/bin/pdftk &&\
+    # Install QPDF (PDF engine). PDFtk is left out because it needs a JVM.
     apt-get update -qq &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends qpdf &&\
-    # See https://github.com/nextcloud/docker/issues/380.
-    mkdir -p /usr/share/man/man1 &&\
     # Verify installations.
-    pdftk --version &&\
     qpdf --version &&\
     # Cleanup.
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -193,7 +176,6 @@ COPY --from=binary-stage /home/gotenberg /usr/bin/
 ENV CHROMIUM_BIN_PATH /usr/bin/chromium
 ENV LIBREOFFICE_BIN_PATH /usr/lib/libreoffice/program/soffice.bin
 ENV UNOCONVERTER_BIN_PATH /usr/bin/unoconverter
-ENV PDFTK_BIN_PATH /usr/bin/pdftk
 ENV QPDF_BIN_PATH /usr/bin/qpdf
 
 USER gotenberg
