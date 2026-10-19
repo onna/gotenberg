@@ -30,7 +30,7 @@ func convertRoute(libreOffice libreofficeapi.Uno, engine gotenberg.PdfEngine) ap
 				pdfa             string
 				pdfua            bool
 				nativePdfFormats bool
-				htmlFormat	   	 bool
+				htmlFormat       bool
 				merge            bool
 				importFilter     string
 				importOptions    string
@@ -91,8 +91,8 @@ func convertRoute(libreOffice libreofficeapi.Uno, engine gotenberg.PdfEngine) ap
 				}
 
 				options := libreofficeapi.Options{
-					Landscape:  landscape,
-					PageRanges: nativePageRanges,
+					Landscape:     landscape,
+					PageRanges:    nativePageRanges,
 					ImportFilter:  importFilter,
 					ImportOptions: importOptions,
 				}
@@ -122,14 +122,14 @@ func convertRoute(libreOffice libreofficeapi.Uno, engine gotenberg.PdfEngine) ap
 								),
 							)
 						}
-	
+
 						if errors.Is(err, libreofficeapi.ErrMalformedPageRanges) {
 							return api.WrapError(
 								fmt.Errorf("convert to PDF: %w", err),
 								api.NewSentinelHttpError(http.StatusBadRequest, fmt.Sprintf("Malformed page ranges '%s' (nativePageRanges)", options.PageRanges)),
 							)
 						}
-	
+
 						return fmt.Errorf("convert to PDF: %w", err)
 					}
 				}

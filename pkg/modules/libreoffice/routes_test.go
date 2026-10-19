@@ -612,6 +612,7 @@ func TestConvertRoute(t *testing.T) {
 				ctx := &api.ContextMock{Context: new(api.Context)}
 				ctx.SetFiles(map[string]string{
 					"document.docx":  "/document.docx",
+					"document2.docx": "/document2.docx",
 				})
 				ctx.SetValues(map[string][]string{
 					"merge": {
@@ -646,7 +647,7 @@ func TestConvertRoute(t *testing.T) {
 			ctx: func() *api.ContextMock {
 				ctx := &api.ContextMock{Context: new(api.Context)}
 				ctx.SetFiles(map[string]string{
-					"document.docx":  "/document.docx",
+					"document.docx": "/document.docx",
 				})
 				ctx.SetValues(map[string][]string{
 					"nativePageRanges": {
@@ -681,7 +682,7 @@ func TestConvertRoute(t *testing.T) {
 			ctx: func() *api.ContextMock {
 				ctx := &api.ContextMock{Context: new(api.Context)}
 				ctx.SetFiles(map[string]string{
-					"document.docx":  "/document.docx",
+					"document.docx": "/document.docx",
 				})
 				ctx.SetValues(map[string][]string{
 					"pdfa": {
@@ -716,7 +717,7 @@ func TestConvertRoute(t *testing.T) {
 			ctx: func() *api.ContextMock {
 				ctx := &api.ContextMock{Context: new(api.Context)}
 				ctx.SetFiles(map[string]string{
-					"document.docx":  "/document.docx",
+					"document.docx": "/document.docx",
 				})
 				ctx.SetValues(map[string][]string{
 					"pdfua": {

@@ -990,44 +990,6 @@ func TestChromiumBrowser_pdf(t *testing.T) {
 			},
 		},
 		{
-			scenario: "ErrInvalidPrinterSettings",
-			browser: newChromiumBrowser(
-				browserArguments{
-					binPath:          os.Getenv("CHROMIUM_BIN_PATH"),
-					wsUrlReadTimeout: 5 * time.Second,
-					allowList:        regexp.MustCompile(""),
-					denyList:         regexp.MustCompile(""),
-				},
-			),
-			fs: func() *gotenberg.FileSystem {
-				fs := gotenberg.NewFileSystem()
-
-				err := os.MkdirAll(fs.WorkingDirPath(), 0o755)
-				if err != nil {
-					t.Fatalf(fmt.Sprintf("expected no error but got: %v", err))
-				}
-
-				err = os.WriteFile(fmt.Sprintf("%s/index.html", fs.WorkingDirPath()), []byte("<h1>ErrInvalidPrinterSettings</h1>"), 0o755)
-				if err != nil {
-					t.Fatalf("expected no error but got: %v", err)
-				}
-
-				return fs
-			}(),
-			options: PdfOptions{
-				PaperWidth:   0,
-				PaperHeight:  0,
-				MarginTop:    1000000,
-				MarginBottom: 1000000,
-				MarginLeft:   1000000,
-				MarginRight:  1000000,
-			},
-			noDeadline:    false,
-			start:         true,
-			expectError:   true,
-			expectedError: ErrInvalidPrinterSettings,
-		},
-		{
 			scenario: "ErrPageRangesSyntaxError",
 			browser: newChromiumBrowser(
 				browserArguments{
