@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -381,7 +380,9 @@ func (p *libreOfficeProcess) html(ctx context.Context, logger *zap.Logger, input
 
 	exitCode, err := cmd.Exec()
 	if err == nil {
-		replaceHtmlImageWithEmbeddedBase64(outputPath, logger)
+		if err := replaceHtmlImageWithEmbeddedBase64(outputPath, logger); err != nil {
+			logger.Error(fmt.Sprintf("embed images in HTML: %s", err))
+		}
 		return nil
 	}
 
@@ -419,13 +420,13 @@ func replaceHtmlImageWithEmbeddedBase64(outputPath string, logger *zap.Logger) e
 			imageData, err := os.ReadFile(fullPath)
 			if err == nil {
 				encoded := b64.StdEncoding.EncodeToString(imageData)
-				html = imgRe.ReplaceAllString(html, "img src=\"data:image/"+ filepath.Ext(value[1])+";base64,"+encoded + "\"")
+				html = imgRe.ReplaceAllString(html, "img src=\"data:image/"+filepath.Ext(value[1])+";base64,"+encoded+"\"")
 				logger.Info("Embedded the image that was in: " + value[1])
 			}
 		}
 	}
 	// Rewrite output file with the modified document.
-	err = ioutil.WriteFile(outputPath+".embedded", []byte(html), 0644)
+	err = os.WriteFile(outputPath+".embedded", []byte(html), 0o644)
 	if err == nil {
 		logger.Info("Wrote the embedded version of the html file")
 		_ = os.Rename(outputPath+".embedded", outputPath)

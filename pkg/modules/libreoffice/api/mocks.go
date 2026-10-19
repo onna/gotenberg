@@ -11,7 +11,7 @@ import (
 // ApiMock is a mock for the [Uno] interface.
 type ApiMock struct {
 	PdfMock        func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
-	HtmlMock	   func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
+	HtmlMock       func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
 	ExtensionsMock func() []string
 }
 
@@ -39,7 +39,7 @@ func (provider *ProviderMock) LibreOffice() (Uno, error) {
 // libreOfficeMock is a mock for the [libreOffice] interface.
 type libreOfficeMock struct {
 	gotenberg.ProcessMock
-	pdfMock func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
+	pdfMock  func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
 	htmlMock func(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error
 }
 
